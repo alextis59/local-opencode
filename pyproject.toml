@@ -1,0 +1,15 @@
+[project]
+name = "local-opencode-vibethinker"
+version = "0.1.0"
+description = "Local OpenAI-compatible gateway for WeiboAI/VibeThinker-3B and OpenCode."
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi>=0.100",
+  "huggingface-hub>=0.24",
+  "llama-cpp-python>=0.3.9",
+  "pydantic>=2.0",
+  "uvicorn[standard]>=0.23",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
