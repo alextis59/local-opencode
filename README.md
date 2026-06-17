@@ -116,6 +116,17 @@ Copy `.env.example` if you want shell-managed settings. The most useful values:
   low so OpenCode smoke tests complete on CPU-only machines. Raise it to `256`
   or `512` for better answers, or set it to `0` to accept the caller's requested
   output length.
+- `VIBETHINKER_TEMPERATURE=0.2`: default sampling temperature when the caller
+  does not provide one. Use `0` for deterministic coding and JSON-output runs.
+- `VIBETHINKER_TOP_P=0.95`: default nucleus sampling value when the caller does
+  not provide one.
+- `VIBETHINKER_TOP_K=40`: default top-k sampling value when the caller does not
+  provide one.
+- `VIBETHINKER_MIN_P=0.05`: default min-p sampling value when the caller does not
+  provide one.
+- `VIBETHINKER_REPEAT_PENALTY=1.0`: default llama.cpp repeat penalty. Keep this
+  at `1.0` for coding-model experiments unless you have a measured reason to
+  change it.
 - `VIBETHINKER_BUFFER_STREAM=true`: buffers streamed requests so the gateway can
   strip `<think>` tags and convert XML tool calls before OpenCode sees them.
 - `VIBETHINKER_FALLBACK_TO_REASONING=true`: if the model is cut off before it

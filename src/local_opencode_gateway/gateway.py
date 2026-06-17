@@ -16,10 +16,36 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from .tool_calls import parse_reasoning, parse_tool_calls
 
 
+def _env_int(name: str, default: int) -> int:
+    value = os.getenv(name)
+    if value is None or value == "":
+        return default
+    return int(value)
+
+
+def _env_float(name: str, default: float) -> float:
+    value = os.getenv(name)
+    if value is None or value == "":
+        return default
+    return float(value)
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None or value == "":
+        return default
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
 MODEL_ID = os.getenv("VIBETHINKER_MODEL_ID", "vibethinker-3b")
 MODEL_PATH = Path(os.getenv("VIBETHINKER_MODEL_PATH", "models/vibethinker-3b-q4_k_m.gguf"))
 DEFAULT_MAX_TOKENS = int(os.getenv("VIBETHINKER_DEFAULT_MAX_TOKENS", "64"))
 MAX_TOKENS = int(os.getenv("VIBETHINKER_MAX_TOKENS", "64"))
+TEMPERATURE = _env_float("VIBETHINKER_TEMPERATURE", 0.2)
+TOP_P = _env_float("VIBETHINKER_TOP_P", 0.95)
+TOP_K = _env_int("VIBETHINKER_TOP_K", 40)
+MIN_P = _env_float("VIBETHINKER_MIN_P", 0.05)
+REPEAT_PENALTY = _env_float("VIBETHINKER_REPEAT_PENALTY", 1.0)
 BUFFER_STREAM = (
     os.getenv("VIBETHINKER_BUFFER_STREAM")
     or os.getenv("VIBETHINKER_BUFFER_STREAM_WITH_TOOLS")
@@ -37,20 +63,6 @@ LOG_COMPLETIONS = os.getenv("VIBETHINKER_LOG_COMPLETIONS", "false").lower() == "
 
 app = FastAPI(title="VibeThinker local OpenCode gateway", version="0.1.0")
 GENERATION_LOCK = threading.Lock()
-
-
-def _env_int(name: str, default: int) -> int:
-    value = os.getenv(name)
-    if value is None or value == "":
-        return default
-    return int(value)
-
-
-def _env_bool(name: str, default: bool) -> bool:
-    value = os.getenv(name)
-    if value is None or value == "":
-        return default
-    return value.lower() in {"1", "true", "yes", "on"}
 
 
 @lru_cache(maxsize=1)
@@ -156,7 +168,12 @@ def create_completion(payload: dict[str, Any], *, stream: bool) -> Any:
             f"forwarded_tool_names={forwarded_tool_names} "
             f"forward_tools={FORWARD_TOOLS} "
             f"response_format={RESPONSE_FORMAT or None} "
-            f"max_tokens={kwargs.get('max_tokens')}",
+            f"max_tokens={kwargs.get('max_tokens')} "
+            f"temperature={kwargs.get('temperature')} "
+            f"top_p={kwargs.get('top_p')} "
+            f"top_k={kwargs.get('top_k')} "
+            f"min_p={kwargs.get('min_p')} "
+            f"repeat_penalty={kwargs.get('repeat_penalty')}",
             flush=True,
         )
 
@@ -177,8 +194,11 @@ def build_completion_kwargs(payload: dict[str, Any], *, stream: bool) -> dict[st
 
     kwargs: dict[str, Any] = {
         "messages": payload.get("messages", []),
-        "temperature": payload.get("temperature", 0.2),
-        "top_p": payload.get("top_p", 0.95),
+        "temperature": payload.get("temperature", TEMPERATURE),
+        "top_p": payload.get("top_p", TOP_P),
+        "top_k": payload.get("top_k", TOP_K),
+        "min_p": payload.get("min_p", MIN_P),
+        "repeat_penalty": payload.get("repeat_penalty", REPEAT_PENALTY),
         "max_tokens": max_tokens,
         "stream": stream,
     }

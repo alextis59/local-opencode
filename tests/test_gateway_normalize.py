@@ -64,3 +64,19 @@ def test_build_completion_kwargs_can_force_response_format(monkeypatch) -> None:
     kwargs = build_completion_kwargs({"messages": [{"role": "user", "content": "hi"}]}, stream=False)
 
     assert kwargs["response_format"] == {"type": "json_object"}
+
+
+def test_build_completion_kwargs_uses_decoding_defaults(monkeypatch) -> None:
+    monkeypatch.setattr(gateway, "TEMPERATURE", 0.0)
+    monkeypatch.setattr(gateway, "TOP_P", 1.0)
+    monkeypatch.setattr(gateway, "TOP_K", 20)
+    monkeypatch.setattr(gateway, "MIN_P", 0.0)
+    monkeypatch.setattr(gateway, "REPEAT_PENALTY", 1.0)
+
+    kwargs = build_completion_kwargs({"messages": [{"role": "user", "content": "hi"}]}, stream=False)
+
+    assert kwargs["temperature"] == 0.0
+    assert kwargs["top_p"] == 1.0
+    assert kwargs["top_k"] == 20
+    assert kwargs["min_p"] == 0.0
+    assert kwargs["repeat_penalty"] == 1.0
