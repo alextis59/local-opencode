@@ -27,6 +27,12 @@ BUFFER_STREAM = (
 ).lower() != "false"
 FALLBACK_TO_REASONING = os.getenv("VIBETHINKER_FALLBACK_TO_REASONING", "true").lower() != "false"
 FORWARD_TOOLS = os.getenv("VIBETHINKER_FORWARD_TOOLS", "false").lower() == "true"
+FORWARD_TOOL_NAMES = {
+    name.strip()
+    for name in os.getenv("VIBETHINKER_FORWARD_TOOL_NAMES", "").split(",")
+    if name.strip()
+}
+RESPONSE_FORMAT = os.getenv("VIBETHINKER_RESPONSE_FORMAT", "").strip()
 LOG_COMPLETIONS = os.getenv("VIBETHINKER_LOG_COMPLETIONS", "false").lower() == "true"
 
 app = FastAPI(title="VibeThinker local OpenCode gateway", version="0.1.0")
@@ -135,12 +141,21 @@ def create_completion(payload: dict[str, Any], *, stream: bool) -> Any:
     kwargs = build_completion_kwargs(payload, stream=stream)
 
     if LOG_COMPLETIONS:
+        forwarded_tools = kwargs.get("tools") or []
+        forwarded_tool_names = [
+            tool.get("function", {}).get("name")
+            for tool in forwarded_tools
+            if isinstance(tool, dict)
+        ]
         print(
             "request summary "
             f"stream={stream} "
             f"messages={len(payload.get('messages') or [])} "
             f"tools={len(payload.get('tools') or [])} "
+            f"forwarded_tools={len(forwarded_tools)} "
+            f"forwarded_tool_names={forwarded_tool_names} "
             f"forward_tools={FORWARD_TOOLS} "
+            f"response_format={RESPONSE_FORMAT or None} "
             f"max_tokens={kwargs.get('max_tokens')}",
             flush=True,
         )
@@ -173,11 +188,34 @@ def build_completion_kwargs(payload: dict[str, Any], *, stream: bool) -> dict[st
             kwargs[key] = payload[key]
 
     if FORWARD_TOOLS:
-        for key in ("tools", "tool_choice"):
-            if key in payload:
-                kwargs[key] = payload[key]
+        tools = filtered_tools(payload.get("tools"))
+        if tools:
+            kwargs["tools"] = tools
+            if "tool_choice" in payload:
+                kwargs["tool_choice"] = payload["tool_choice"]
+
+    if RESPONSE_FORMAT:
+        kwargs["response_format"] = {"type": RESPONSE_FORMAT}
 
     return kwargs
+
+
+def filtered_tools(tools: Any) -> list[dict[str, Any]]:
+    if not isinstance(tools, list):
+        return []
+    if not FORWARD_TOOL_NAMES:
+        return [tool for tool in tools if isinstance(tool, dict)]
+
+    allowed: list[dict[str, Any]] = []
+    for tool in tools:
+        if not isinstance(tool, dict):
+            continue
+        function = tool.get("function")
+        if not isinstance(function, dict):
+            continue
+        if function.get("name") in FORWARD_TOOL_NAMES:
+            allowed.append(tool)
+    return allowed
 
 
 def normalize_completion(completion: dict[str, Any]) -> dict[str, Any]:

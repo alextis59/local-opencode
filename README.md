@@ -124,6 +124,11 @@ Copy `.env.example` if you want shell-managed settings. The most useful values:
 - `VIBETHINKER_FORWARD_TOOLS=false`: skip forwarding OpenCode's full tool schema
   into llama.cpp. Set to `true` when you want to experiment with local tool
   calling and can tolerate the much larger prompt.
+- `VIBETHINKER_FORWARD_TOOL_NAMES=`: optional comma-separated allowlist used
+  when `VIBETHINKER_FORWARD_TOOLS=true`, for example `write,edit,bash`, to keep
+  local tool-calling experiments smaller and more CPU-safe.
+- `VIBETHINKER_RESPONSE_FORMAT=`: optional llama.cpp response format override.
+  Set to `json_object` for experiments that need strict JSON output.
 
 ## Notes
 
