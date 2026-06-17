@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VENV_DIR="${VENV_DIR:-$ROOT_DIR/.venv}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 if [[ -f "$ROOT_DIR/.env" ]]; then
   set -a
@@ -11,6 +12,10 @@ if [[ -f "$ROOT_DIR/.env" ]]; then
   set +a
 fi
 
-source "$VENV_DIR/bin/activate"
+if [[ -f "$VENV_DIR/bin/activate" ]]; then
+  source "$VENV_DIR/bin/activate"
+  PYTHON_BIN=python
+fi
+
 cd "$ROOT_DIR"
-exec python scripts/serve_gateway.py
+exec "$PYTHON_BIN" scripts/serve_gateway.py
