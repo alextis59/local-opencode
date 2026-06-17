@@ -67,6 +67,9 @@ If you used the installer, run:
 scripts/run_gateway.sh
 ```
 
+`scripts/run_gateway.sh` loads `.env` from the repo root when it exists, so a
+tracked example can be copied into place for repeatable experiments.
+
 The gateway listens on `http://127.0.0.1:8088` and exposes:
 
 - `GET /healthz`
@@ -140,6 +143,26 @@ Copy `.env.example` if you want shell-managed settings. The most useful values:
   local tool-calling experiments smaller and more CPU-safe.
 - `VIBETHINKER_RESPONSE_FORMAT=`: optional llama.cpp response format override.
   Set to `json_object` for experiments that need strict JSON output.
+
+## Smith benchmark profile
+
+For Smith's `--agent opencode --opencode-mode file-output` benchmark path, use
+the dedicated profile:
+
+```bash
+cp .env.smith-benchmark.example .env
+scripts/run_gateway.sh
+```
+
+That profile pins the CPU-friendly settings used in successful reporting-task
+runs:
+
+- no forwarded OpenCode tools: `VIBETHINKER_FORWARD_TOOLS=false`
+- strict JSON completions: `VIBETHINKER_RESPONSE_FORMAT=json_object`
+- output cap: `VIBETHINKER_MAX_TOKENS=512`
+- sampling: `temperature=0.2`, `top_p=0.95`, `top_k=40`, `min_p=0.05`
+- repeat penalty: `VIBETHINKER_REPEAT_PENALTY=1`
+- two llama.cpp threads: `VIBETHINKER_N_THREADS=2`
 
 ## Notes
 
